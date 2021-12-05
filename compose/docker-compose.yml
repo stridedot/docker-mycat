@@ -1,0 +1,111 @@
+version: '3.1'
+
+services:
+  dbm1:
+    image: mysql:8.0.20
+    container_name: dbm1
+    volumes:
+      - ../conf/mysql-m1/conf.d/docker.cnf:/etc/mysql/conf.d/docker.cnf:ro
+      - ../conf/hosts:/etc/hosts:ro
+      - ../mysql/mysql-m1/:/var/lib/mysql/
+      - ../logs/mysql-m1/:/var/log/mysql/
+    ports:
+    - "3309:3306"
+    networks:
+      net-mysql:
+        ipv4_address: 172.18.0.2
+    ulimits:
+      nproc: 65535
+    hostname: dbm1
+    mem_limit: 512m
+    restart: always
+    command:
+      - '--character-set-server=utf8mb4'
+      - '--collation-server=utf8mb4_general_ci'
+    environment:
+      MYSQL_ROOT_PASSWORD: '123456'
+
+  dbs1:
+    image: mysql:8.0.20
+    container_name: dbs1
+    volumes:
+      - ../conf/mysql-s1/conf.d/docker.cnf:/etc/mysql/conf.d/docker.cnf:ro
+      - ../conf/hosts:/etc/hosts:ro
+      - ../mysql/mysql-s1/:/var/lib/mysql/
+      - ../logs/mysql-s1/:/var/log/mysql/
+    ports:
+      - "3307:3306"
+    networks:
+      net-mysql:
+        ipv4_address: 172.18.0.3
+    links:
+      - dbm1
+    ulimits:
+      nproc: 65535
+    hostname: dbs1
+    mem_limit: 512m
+    restart: always
+    command:
+      - '--character-set-server=utf8mb4'
+      - '--collation-server=utf8mb4_general_ci'
+    environment:
+      MYSQL_ROOT_PASSWORD: '123456'
+
+  dbs2:
+    image: mysql:8.0.20
+    container_name: dbs2
+    volumes:
+      - ../conf/mysql-s2/conf.d/docker.cnf:/etc/mysql/conf.d/docker.cnf:ro
+      - ../conf/hosts:/etc/hosts:ro
+      - ../mysql/mysql-s2/:/var/lib/mysql/
+      - ../logs/mysql-s2/:/var/log/mysql/
+    ports:
+      - "3308:3306"
+    networks:
+      net-mysql:
+        ipv4_address: 172.18.0.4
+    links:
+      - dbm1
+    ulimits:
+      nproc: 65535
+    hostname: dbs2
+    mem_limit: 512m
+    restart: always
+    command:
+      - '--character-set-server=utf8mb4'
+      - '--collation-server=utf8mb4_general_ci'
+    environment:
+      MYSQL_ROOT_PASSWORD: '123456'
+
+  mycat:
+    build: ./mycat
+    container_name: mycat
+    volumes:
+      - ../conf/mycat/:/usr/local/mycat/conf:ro
+      - ../logs/mycat/:/usr/local/mycat/logs/:rw
+      - ../conf/hosts:/etc/hosts:ro
+    ports:
+      - "8066:8066"
+      - "9066:9066"
+    links:
+      - dbm1
+      - dbs1
+      - dbs2
+    networks:
+      net-mysql:
+        ipv4_address: 172.18.0.5
+    ulimits:
+      nproc: 65535
+    hostname: mycat
+    mem_limit: 512m
+    restart: always
+
+networks:
+  net-mysql:
+    name: net-mysql
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.0.0/24
+          gateway: 172.18.0.1
