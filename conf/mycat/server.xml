@@ -106,7 +106,7 @@
 
 	<user name="mycat" defaultAccount="true">
 		<property name="password">123456</property>
-		<property name="schemas">test_db,master_db</property>
+		<property name="schemas">test_db</property>
 		<property name="defaultSchema">test_db</property>
 		<!--No MyCAT Database selected 错误前会尝试使用该schema作为schema，不设置则为null,报错 -->
 		
