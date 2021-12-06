@@ -9,9 +9,41 @@
 
 ### 2. 目录
 
-```shell
-[root@192 docker-mycat]# tree docker-mycat
-docker-mycat
+```
+├── compose
+│     ├── docker-compose.yml
+│     └── mycat
+│         └── Dockerfile
+├── conf
+│     ├── hosts
+│     ├── mycat
+│     │     └──...
+│     ├── mysql-m1
+│     │     └── conf.d
+│     │         └── docker.cnf
+│     ├── mysql-s1
+│     │     └── conf.d
+│     │         └── docker.cnf
+│     └── mysql-s2
+│           └── conf.d
+│               └── docker.cnf
+├── logs
+│     ├── mycat
+│     │     ├── mycat.log
+│     │     ├── mycat.pid
+│     │     ├── switch.log
+│     │     └── wrapper.log
+│     ├── mysql-m1
+│     ├── mysql-s1
+│     └── mysql-s2
+├── mysql
+│     ├── mysql-m1
+│     │     ├── ...
+│     ├── mysql-s1
+│     │     ├── ...
+│     └── mysql-s2
+│     │     ├── ...
+└── README.md
 ```
 
 ### 3. `MySQL` 主从服务器结构
