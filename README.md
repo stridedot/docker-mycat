@@ -310,4 +310,10 @@ mysql> select * from test_table;
 2018-07-02 16:31:21.173 INFO [$_NIOREACTOR-25-RW] (io.mycat.sqlengine.SQLJob.connectionError(SQLJob.java:117)) - can't get connection for sql :select user()
 2018-07-02 16:31:21.173 WARN [$_NIOREACTOR-27-RW] (io.mycat.backend.mysql.nio.MySQLConnectionAuthenticator.handle(MySQLConnectionAuthenticator.java:91)) - can't connect to mysql server ,errmsg:Client does not support authentication protocol requested by server; consider upgrading MySQL client MySQLConnection
 ```
-解决方式：https://github.com/MyCATApache/Mycat-Server/issues/1899
+解决方式：
+```shell
+ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY '123456';
+FLUSH PRIVILEGES;
+ALTER USER 'root'@'%' IDENTIFIED BY '123456'; ## 必须执行这个变更密码,否则会报错找不到caching_sha2_password模块
+FLUSH PRIVILEGES;
+```
