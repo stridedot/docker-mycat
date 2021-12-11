@@ -2,16 +2,26 @@
 <!DOCTYPE mycat:schema SYSTEM "schema.dtd">
 <mycat:schema xmlns:mycat="http://io.mycat/">
 	<!-- 配置1个逻辑库-->
-	<schema name="test_db" checkSQLschema="false" sqlMaxLimit="100" dataNode="masterDN" />
+	<schema name="test_db" checkSQLschema="false" sqlMaxLimit="100">
+		<!-- 将 employee 分片，结点跟 host IP 最后一个数字相同 -->
+		<table name="employee" primaryKey="ID" dataNode="dn2,dn4" rule="sharding-by-intfile" />
+	</schema>
 	<!-- 逻辑库对应的真实数据库-->
-	<dataNode name="masterDN" dataHost="masterDH" database="test_db" />
-	<!--真实数据库所在的服务器地址，这里配置了1主2从。主服务器(hostM1)宕机会自动切换到(hostS1) -->
-	<dataHost name="masterDH" maxCon="1000" minCon="10" balance="1"
+	<dataNode name="dn2" dataHost="host2" database="test_db" />
+	<dataNode name="dn4" dataHost="host4" database="test_db" />
+	<!--真实数据库所在的服务器地址，这里配置了1主2从。主服务器(dbm1)宕机会自动切换到(dbs2) -->
+	<dataHost name="host2" maxCon="1000" minCon="10" balance="1"
 			  writeType="0" dbType="mysql" dbDriver="native" switchType="-1" slaveThreshold="100">
 		<heartbeat>select user()</heartbeat>
 		<writeHost host="dbm1" url="172.18.0.2:3306" user="root" password="123456">
 			<readHost host="dbs1" url="172.18.0.3:3306" user="root" password="123456" />
-			<readHost host="dbs2" url="172.18.0.4:3306" user="root" password="123456" />
+			<!--<readHost host="dbs2" url="172.18.0.4:3306" user="root" password="123456" />-->
 		</writeHost>
+	</dataHost>
+	<!-- 将此主机作为切片 分表操作 balance=0表示关闭负载均衡 -->
+	<dataHost name="host4" maxCon="1000" minCon="10" balance="0"
+			  writeType="0" dbType="mysql" dbDriver="native" switchType="-1" slaveThreshold="100">
+		<heartbeat>select user()</heartbeat>
+		<writeHost host="dbs2" url="172.18.0.4:3306" user="root" password="123456" />
 	</dataHost>
 </mycat:schema>

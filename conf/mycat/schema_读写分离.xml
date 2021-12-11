@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!DOCTYPE mycat:schema SYSTEM "schema.dtd">
+<mycat:schema xmlns:mycat="http://io.mycat/">
+	<!-- 配置1个逻辑库-->
+	<schema name="test_db" checkSQLschema="false" sqlMaxLimit="100" dataNode="masterDN" />
+	<!-- 逻辑库对应的真实数据库-->
+	<dataNode name="masterDN" dataHost="masterDH" database="test_db" />
+	<!--真实数据库所在的服务器地址，这里配置了1主2从。主服务器(hostM1)宕机会自动切换到(hostS1) -->
+	<dataHost name="masterDH" maxCon="1000" minCon="10" balance="1"
+			  writeType="0" dbType="mysql" dbDriver="native" switchType="-1" slaveThreshold="100">
+		<heartbeat>select user()</heartbeat>
+		<writeHost host="dbm1" url="172.18.0.2:3306" user="root" password="123456">
+			<readHost host="dbs1" url="172.18.0.3:3306" user="root" password="123456" />
+			<readHost host="dbs2" url="172.18.0.4:3306" user="root" password="123456" />
+		</writeHost>
+	</dataHost>
+</mycat:schema>

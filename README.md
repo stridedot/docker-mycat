@@ -1,6 +1,7 @@
 ## 使用 `Docker` 创建 `Mycat` 和 `MySQL` 主从服务器
-[安装指南](https://github.com/MyCATApache/Mycat-Server/wiki/2.1-docker%E5%AE%89%E8%A3%85Mycat)  
-[参考指南](https://github.com/liuwel/docker-mycat)
+[官方安装指南](https://github.com/MyCATApache/Mycat-Server/wiki/2.1-docker%E5%AE%89%E8%A3%85Mycat)  
+[docker 配置参考指南](https://github.com/liuwel/docker-mycat)   
+[双主双从配置指南](https://cloud.tencent.com/developer/article/1623821)
 
 ### 1. 环境
    
@@ -125,7 +126,8 @@ mysql>  show master status;
 1 row in set (0.00 sec)
 ```
 
-#### 7.2. 配置从库
+#### 7.2. 配置一主多从
+从库
 进入 dbs1 
 ```shell
 [root@192 docker-mycat]# docker exec -it dbs1 /bin/sh
@@ -317,3 +319,136 @@ FLUSH PRIVILEGES;
 ALTER USER 'root'@'%' IDENTIFIED BY '123456'; ## 必须执行这个变更密码,否则会报错找不到caching_sha2_password模块
 FLUSH PRIVILEGES;
 ```
+
+### 11. 配置读写分离
+删掉刚刚在三个主机数据库中创建的所有数据库，关闭 `dbs2` 的主从复制
+
+#### 11.1. 配置 `Mycat` 的 `schema.xml`
+对刚才的文件 `schema.xml` 稍作修改
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE mycat:schema SYSTEM "schema.dtd">
+<mycat:schema xmlns:mycat="http://io.mycat/">
+	<!-- 配置1个逻辑库-->
+	<schema name="test_db" checkSQLschema="false" sqlMaxLimit="100">
+		<!-- 将 employee 分片，结点跟 host IP 最后一个数字相同 -->
+		<table name="employee" primaryKey="ID" dataNode="dn2,dn4" rule="sharding-by-intfile" />
+	</schema>
+	<!-- 逻辑库对应的真实数据库-->
+	<dataNode name="dn2" dataHost="host2" database="test_db" />
+	<dataNode name="dn4" dataHost="host4" database="test_db" />
+	<!--真实数据库所在的服务器地址，这里配置了1主2从。主服务器(dbm1)宕机会自动切换到(dbs2) -->
+	<dataHost name="host2" maxCon="1000" minCon="10" balance="1"
+			  writeType="0" dbType="mysql" dbDriver="native" switchType="-1" slaveThreshold="100">
+		<heartbeat>select user()</heartbeat>
+		<writeHost host="dbm1" url="172.18.0.2:3306" user="root" password="123456">
+			<readHost host="dbs1" url="172.18.0.3:3306" user="root" password="123456" />
+			<!--<readHost host="dbs2" url="172.18.0.4:3306" user="root" password="123456" />-->
+		</writeHost>
+	</dataHost>
+	<!-- 将此主机作为切片 分表操作 balance=0表示关闭负载均衡 -->
+	<dataHost name="host4" maxCon="1000" minCon="10" balance="0"
+			  writeType="0" dbType="mysql" dbDriver="native" switchType="-1" slaveThreshold="100">
+		<heartbeat>select user()</heartbeat>
+		<writeHost host="dbs2" url="172.18.0.4:3306" user="root" password="123456" />
+	</dataHost>
+</mycat:schema>
+```
+因为只有三个主机数据库，所以我将 `dbs2` 从从库中移了出来，作为一个分片数据库。 
+表 `employee` 根据字段 `sharding_id` 来分片 
+使用的分片规则是 `sharding-by-intfile`，`sharding_id` 做了一定的限制：
+```xml
+<function name="hash-int" class="io.mycat.route.function.PartitionByFileMap">
+    <property name="mapFile">partition-hash-int.txt</property>
+</function>
+```
+可以看出，`hash_int` 规则引用了文件 `partition-hash-int.txt`   
+我们来看看这个文件写了什么：
+```
+10000=0
+10010=1
+```
+也就是说我们的 `sharding_id` 只能是这两个值
+
+#### 11.2. 测试
+##### 11.2.1 创建数据库
+先在 `dbm1` 和 `dbs2` 各创建一个数据库 `test_db` 和 表 `employee`
+```
+mysql> create database test_db;
+mysql> create table employee(id int(11) auto_increment primary key,`name` varchar(100) NOT NULL DEFAULT '',sharding_id int(11) not null);
+```
+由于 `dbm1` 和 `dbs1`开启了主从，`dbs1` 会自动创建数据库和数据表   
+
+##### 11.2.3 创建测试数据
+进入 `Mycat`，向 `employee` 表添加数据
+```sql
+insert into employee(name,sharding_id) values('北京', 10000);
+insert into employee(name,sharding_id) values('天津', 10010);
+insert into employee(name,sharding_id) values('河北', 10000);
+insert into employee(name,sharding_id) values('辽宁', 10010);
+insert into employee(name,sharding_id) values('吉林', 10000);
+insert into employee(name,sharding_id) values('黑龙江', 10010);
+insert into employee(name,sharding_id) values('山东', 10000);
+insert into employee(name,sharding_id) values('江苏', 10010);
+insert into employee(name,sharding_id) values('上海', 10000);
+insert into employee(name,sharding_id) values('浙江', 10010);
+insert into employee(name,sharding_id) values('安徽', 10000);
+insert into employee(name,sharding_id) values('福建', 10010);
+insert into employee(name,sharding_id) values('江西', 10000);
+insert into employee(name,sharding_id) values('广东', 10010);
+insert into employee(name,sharding_id) values('广西', 10000);
+```
+查询 `dbm1`:
+```sql
+mysql> select * from employee;
++----+--------+-------------+
+| id | name   | sharding_id |
++----+--------+-------------+
+|  1 | 北京 |       10000 |
+|  2 | 河北 |       10000 |
+|  3 | 吉林 |       10000 |
+|  4 | 山东 |       10000 |
+|  5 | 上海 |       10000 |
+|  6 | 安徽 |       10000 |
+|  7 | 江西 |       10000 |
+|  8 | 广西 |       10000 |
++----+--------+-------------+
+8 rows in set (0.00 sec)
+```
+查询切片 `dbs2`:
+```sql
+mysql> select * from employee;
++----+-----------+-------------+
+| id | name      | sharding_id |
++----+-----------+-------------+
+|  1 | 天津    |       10010 |
+|  2 | 辽宁    |       10010 |
+|  3 | 黑龙江 |       10010 |
+|  4 | 江苏    |       10010 |
+|  5 | 浙江    |       10010 |
+|  6 | 福建    |       10010 |
+|  7 | 广东    |       10010 |
++----+-----------+-------------+
+7 rows in set (0.03 sec)
+```
+查询 `dbs1`:
+```sql
+mysql> select * from employee;
++----+--------+-------------+
+| id | name   | sharding_id |
++----+--------+-------------+
+|  1 | 北京 |       10000 |
+|  2 | 河北 |       10000 |
+|  3 | 吉林 |       10000 |
+|  4 | 山东 |       10000 |
+|  5 | 上海 |       10000 |
+|  6 | 安徽 |       10000 |
+|  7 | 江西 |       10000 |
+|  8 | 广西 |       10000 |
++----+--------+-------------+
+8 rows in set (0.00 sec)
+```
+
+从查询结果可以看出，`dbm1` 和 `dbs1` 相同，`dbs2` 和 `dbm` 分别按分片规则做了数据存储。
+
+
