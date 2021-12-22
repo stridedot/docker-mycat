@@ -1,7 +1,8 @@
 ## 使用 `Docker` 创建 `Mycat` 和 `MySQL` 主从服务器
 [官方安装指南](https://github.com/MyCATApache/Mycat-Server/wiki/2.1-docker%E5%AE%89%E8%A3%85Mycat)  
 [docker 配置参考指南](https://github.com/liuwel/docker-mycat)   
-[双主双从配置指南](https://cloud.tencent.com/developer/article/1623821)
+[双主双从配置指南](https://cloud.tencent.com/developer/article/1623821)   
+[docker es+logstash+kibana](https://github.com/deviantony/docker-elk)
 
 ### 1. 环境
    
