@@ -79,10 +79,10 @@ services:
 
   mycat:
     build: ./mycat
-    container_name: mycat
+    container_name: Python
     volumes:
-      - ../conf/mycat/:/usr/local/mycat/conf:ro
-      - ../logs/mycat/:/usr/local/mycat/logs/:rw
+      - ../conf/Python/:/usr/local/Python/conf:ro
+      - ../logs/Python/:/usr/local/Python/logs/:rw
       - ../conf/hosts:/etc/hosts:ro
     ports:
       - "8066:8066"
@@ -96,7 +96,7 @@ services:
         ipv4_address: 172.18.0.5
     ulimits:
       nproc: 65535
-    hostname: mycat
+    hostname: Python
     mem_limit: 512m
     restart: always
 

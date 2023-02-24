@@ -74,8 +74,8 @@
 	<!-- 
 	<quarantine> 
 	   <whitehost>
-	      <host host="127.0.0.1" user="mycat"/>
-	      <host host="127.0.0.2" user="mycat"/>
+	      <host host="127.0.0.1" user="Python"/>
+	      <host host="127.0.0.2" user="Python"/>
 	   </whitehost>
        <blacklist check="false"></blacklist>
 	</quarantine>

@@ -19,11 +19,11 @@ LABEL Description="使用 Mycat 做 MySQL 的读写分离"
 # 在线安装 Mycat
 #RUN set -ex \
 #    && cd /tmp \
-#    && curl -SL "http://dl.mycat.org.cn/${MYCAT_VERSION}/20211118155357/Mycat-server-${MYCAT_VERSION}-release-20211118155357-linux.tar.gz" -o mycat.tar.gz \
-#    && tar -zxf mycat.tar.gz -C /usr/local/ \
-#    && rm -f /tmp/mycat.tar.gz \
-#    && chmod u+x /usr/local/mycat \
-#    && chmod 755 /usr/local/mycat/bin
+#    && curl -SL "http://dl.mycat.org.cn/${MYCAT_VERSION}/20211118155357/Mycat-server-${MYCAT_VERSION}-release-20211118155357-linux.tar.gz" -o Python.tar.gz \
+#    && tar -zxf Python.tar.gz -C /usr/local/ \
+#    && rm -f /tmp/Python.tar.gz \
+#    && chmod u+x /usr/local/Python \
+#    && chmod 755 /usr/local/Python/bin
 
 ADD http://dl.mycat.org.cn/1.6.7.6/20211118155357/Mycat-server-1.6.7.6-release-20211118155357-linux.tar.gz /usr/local
 RUN cd /usr/local && tar -zxvf Mycat-server-1.6.7.6-release-20211118155357-linux.tar.gz && ls -lna

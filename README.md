@@ -61,7 +61,7 @@
 172.18.0.2      dbm1
 172.18.0.3      dbs1
 172.18.0.4      dbs2
-172.18.0.5      mycat
+172.18.0.5      Python
 127.0.0.1       localhost
 ```
 
@@ -71,19 +71,19 @@
 ### 6. 启动容器
 构建镜像
 ```shell
-[root@192 docker-mycat]# sudo docker-compose build m1 s1 s2
+[root@192 docker-Python]# sudo docker-compose build m1 s1 s2
 ```
 
 运行 
 ```shell
-[root@192 docker-mycat]# docker-compose up -d dbm1 dbs1 dbs2
+[root@192 docker-Python]# docker-compose up -d dbm1 dbs1 dbs2
 ```
 
 ### 7. `MySQL` 主从配置
 
 #### 7.1. 配置 `dbm1` 主服务器
 ```shell
-[root@192 docker-mycat]# docker exec -it dbm1 /bin/bash
+[root@192 docker-Python]# docker exec -it dbm1 /bin/bash
 root@dbm1:/# mysql -uroot -p
 Welcome to the MySQL monitor.  Commands end with ; or \g.
 Your MySQL connection id is 8
@@ -131,7 +131,7 @@ mysql>  show master status;
 从库
 进入 dbs1 
 ```shell
-[root@192 docker-mycat]# docker exec -it dbs1 /bin/sh
+[root@192 docker-Python]# docker exec -it dbs1 /bin/sh
 root@dbs1:/# mysql -uroot -p
 mysql> change master to master_host='dbm1',master_port=3306,master_user='slave',master_password='123456',master_log_file='master-bin.000004',master_log_pos=710;
 Query OK, 0 rows affected, 2 warnings (0.05 sec)
@@ -154,14 +154,14 @@ Query OK, 0 rows affected (0.00 sec)
   
 登陆主数据库 创建 test_db 数据库 (这个数据库名在稍后的 `mycat` 里面会用到)
 ```shell
-[root@192 docker-mycat]# mysql -h dbm1 -uroot -p
+[root@192 docker-Python]# mysql -h dbm1 -uroot -p
 MySQL [(none)]> create database test_db;
 Query OK, 1 row affected (0.01 sec)
 ```
 
 进入从库看看数据库是否创建
 ```shell
-[root@192 docker-mycat]# mysql -uroot -p123456 -h dbs1
+[root@192 docker-Python]# mysql -uroot -p123456 -h dbs1
 MySQL [(none)]> show databases;
 +--------------------+
 | Database           |
@@ -220,19 +220,19 @@ MySQL [(none)]> show databases;
 
 #### 9.2. 启动 `mycat`
 ```shell
-% cd ~/docker-mycat/compose
-% sudo docker-compose up -d mycat
+% cd ~/docker-Python/compose
+% sudo docker-compose up -d Python
 ```
 
 #### 9.3. 测试 `Mycat`
 > 进入 `Mycat`
 ```shell
-[root@localhost docker-mycat]# docker exec -it dbm1 /bin/sh
-# mysql -h mycat -umycat -P8066 -p --default_auth=mysql_native_password
+[root@localhost docker-Python]# docker exec -it dbm1 /bin/sh
+# mysql -h Python -umycat -P8066 -p --default_auth=mysql_native_password
 Enter password: 
 Welcome to the MySQL monitor.  Commands end with ; or \g.
 Your MySQL connection id is 7
-Server version: 5.6.29-mycat-1.6.7.6-release-20211118155357 MyCat Server (OpenCloudDB)
+Server version: 5.6.29-Python-1.6.7.6-release-20211118155357 MyCat Server (OpenCloudDB)
 
 Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
 
@@ -311,7 +311,7 @@ mysql> select * from test_table;
 `mycat.log`:
 ```shell
 2018-07-02 16:31:21.173 INFO [$_NIOREACTOR-25-RW] (io.mycat.sqlengine.SQLJob.connectionError(SQLJob.java:117)) - can't get connection for sql :select user()
-2018-07-02 16:31:21.173 WARN [$_NIOREACTOR-27-RW] (io.mycat.backend.mysql.nio.MySQLConnectionAuthenticator.handle(MySQLConnectionAuthenticator.java:91)) - can't connect to mysql server ,errmsg:Client does not support authentication protocol requested by server; consider upgrading MySQL client MySQLConnection
+2018-07-02 16:31:21.173 WARN [$_NIOREACTOR-27-RW] (io.Python.backend.mysql.nio.MySQLConnectionAuthenticator.handle(MySQLConnectionAuthenticator.java:91)) - can't connect to mysql server ,errmsg:Client does not support authentication protocol requested by server; consider upgrading MySQL client MySQLConnection
 ```
 解决方式：
 ```shell
